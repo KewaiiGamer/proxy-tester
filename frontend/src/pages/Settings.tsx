@@ -17,9 +17,9 @@ function Settings() {
 
   async function loadSettings() {
     const s = await getSettings();
-    setDomains(s.domains);
-    setDefaultTimeout(s.default_timeout);
-    setDefaultThreads(s.default_threads);
+    setDomains(s.domains || []);
+    setDefaultTimeout(s.default_timeout || 10);
+    setDefaultThreads(s.default_threads || 50);
   }
 
   async function handleSave() {
