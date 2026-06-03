@@ -47,7 +47,7 @@ function Layout({ children }: LayoutProps) {
           })}
         </nav>
         <div className="p-4 border-t border-border text-xs text-muted-foreground">
-          Proxy Tester v1.0.0
+          Proxy Tester v0.1.0
         </div>
       </aside>
 

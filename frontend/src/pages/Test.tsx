@@ -23,11 +23,11 @@ function Test() {
 
   async function loadInitial() {
     const [l, s] = await Promise.all([getLists(), getSettings()]);
-    setLists(l);
-    setDomains(s.domains);
-    setTimeout_(s.default_timeout);
-    setThreads(s.default_threads);
-    if (s.domains.length > 0) {
+    setLists(l || []);
+    setDomains(s.domains || []);
+    setTimeout_(s.default_timeout || 10);
+    setThreads(s.default_threads || 50);
+    if (s.domains && s.domains.length > 0) {
       setSelectedDomain(s.domains[0].url);
     }
   }

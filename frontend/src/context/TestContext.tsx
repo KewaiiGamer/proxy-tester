@@ -32,15 +32,19 @@ export function TestProvider({ children }: { children: React.ReactNode }) {
       const poll = async () => {
         try {
           const p = await backend.GetProgress();
-          setProgress(p);
+          if (p) {
+            setProgress(p);
+          }
 
           const testing = await backend.IsTesting();
           const done = await backend.IsDone();
 
           if (!testing && done) {
             const result = backend.GetResult();
-            setResults(result.proxies || []);
-            setDuration(result.duration || '');
+            if (result?.proxies) {
+              setResults(result.proxies);
+              setDuration(result.duration || '');
+            }
             setIsTesting(false);
             if (pollingRef.current) {
               clearInterval(pollingRef.current);
@@ -48,7 +52,7 @@ export function TestProvider({ children }: { children: React.ReactNode }) {
             }
           }
         } catch (e) {
-          console.error('Poll error:', e);
+          // ignore polling errors
         }
       };
 
