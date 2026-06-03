@@ -1,13 +1,13 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { getLists, loadList, saveList, getSettings } from '../services/backend';
-import { Proxy, TestDomain, TestProgress as TestProgressType, TestResult as TestResultType } from '../wailsgo';
+import { Proxy, TestDomain } from '../wailsgo';
 import { displayName } from '../utils/display';
+import { useTest } from '../context/TestContext';
 import { TestTube2, Play, Square, Clock, CheckCircle2, XCircle, Save } from 'lucide-react';
-import { App } from '../wailsgo';
-
-const backend = new App();
 
 function Test() {
+  const { isTesting, progress, results, duration, testError, startTest, cancelTest, clearResults } = useTest();
+
   const [lists, setLists] = useState<string[]>([]);
   const [selectedList, setSelectedList] = useState('');
   const [proxies, setProxies] = useState<Proxy[]>([]);
@@ -15,21 +15,10 @@ function Test() {
   const [selectedDomain, setSelectedDomain] = useState('');
   const [timeout, setTimeout_] = useState(10);
   const [threads, setThreads] = useState(50);
-
-  const [isTesting, setIsTesting] = useState(false);
-  const [progress, setProgress] = useState<TestProgressType | null>(null);
-  const [results, setResults] = useState<Proxy[]>([]);
-  const [duration, setDuration] = useState('');
   const [testListName, setTestListName] = useState('');
-  const [testError, setTestError] = useState('');
-
-  const pollingRef = useRef<number | null>(null);
 
   useEffect(() => {
     loadInitial();
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    };
   }, []);
 
   async function loadInitial() {
@@ -48,82 +37,20 @@ function Test() {
       const list = await loadList(filename);
       setSelectedList(filename);
       setProxies(list.proxies);
-      setResults([]);
-      setProgress(null);
-      setDuration('');
-      setTestError('');
       setTestListName(filename.replace(/\.json$/i, '') + '_tested');
+      clearResults();
     } catch (e: any) {
-      setTestError('Failed to load list: ' + e.message);
+      // error handled by context
     }
   }
 
-  // Poll for test progress
-  const pollProgress = useCallback(async () => {
-    try {
-      const p = backend.GetProgress();
-      setProgress(await p);
-
-      const testing = backend.IsTesting();
-      const done = backend.IsDone();
-
-      if (!testing && done) {
-        // Test is done
-        const result = backend.GetResult();
-        console.log('Test complete:', result);
-        setResults(result.proxies || []);
-        setDuration(result.duration || '');
-        setIsTesting(false);
-        if (pollingRef.current) {
-          clearInterval(pollingRef.current);
-          pollingRef.current = null;
-        }
-      }
-    } catch (e) {
-      console.error('Poll error:', e);
-    }
-  }, []);
-
-  async function handleTest() {
-    if (proxies.length === 0 || !selectedDomain) {
-      setTestError('No proxies loaded or no domain selected');
-      return;
-    }
-
-    setIsTesting(true);
-    setTestError('');
-    setResults([]);
-    setProgress({ total: proxies.length, completed: 0, alive: 0, dead: 0, current_index: 0 });
-    setDuration('');
-
-    try {
-      console.log('Starting test:', { count: proxies.length, url: selectedDomain, timeout, threads });
-      await backend.StartTest(proxies, selectedDomain, timeout, threads);
-      console.log('Test started, polling2...');
-      console.log('2...');
-      // Start polling for progress
-      if (pollingRef.current) clearInterval(pollingRef.current);
-      pollingRef.current = window.setInterval(pollProgress, 200);
-    } catch (e: any) {
-      console.error('Test failed:', e);
-      const errMsg = e?.message || e?.error || JSON.stringify(e);
-      setTestError('Failed to start test: ' + errMsg);
-      setIsTesting(false);
-      setProgress(null);
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
-    }
+  function handleTest() {
+    if (proxies.length === 0 || !selectedDomain) return;
+    startTest(proxies, selectedDomain, timeout, threads);
   }
 
   function handleStop() {
-    backend.CancelTest();
-    setIsTesting(false);
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current);
-      pollingRef.current = null;
-    }
+    cancelTest();
   }
 
   async function handleSaveResults() {
@@ -131,9 +58,8 @@ function Test() {
     try {
       await saveList(testListName, results);
       loadInitial();
-      setTestError('');
     } catch (e: any) {
-      setTestError('Failed to save: ' + e.message);
+      // error handled by context
     }
   }
 
