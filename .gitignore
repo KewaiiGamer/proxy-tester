@@ -1,0 +1,5 @@
+/.qwen
+/.waylog
+/*/node_modules
+/build
+/frontend/build

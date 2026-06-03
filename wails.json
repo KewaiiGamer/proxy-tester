@@ -1,0 +1,16 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "proxy-tester",
+  "backend": "golang",
+  "frontend": {
+    "enabled": true,
+    "environment": "development",
+    "internalProxyWhenDev": true,
+    "loadingHtml": "frontend/public/index.html",
+    "watcher": {
+      "directory": "frontend",
+      "glob": "**/*"
+    },
+    "useAllFilesMethod": false
+  }
+}
