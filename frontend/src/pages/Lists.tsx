@@ -20,7 +20,7 @@ function Lists() {
   async function loadLists() {
     try {
       const l = await getLists();
-      setLists(l); // keep raw filenames for load/delete
+      setLists(l || []); // keep raw filenames for load/delete
     } catch (e) {
       // ignore
     }

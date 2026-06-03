@@ -15,8 +15,9 @@ function Dashboard() {
   async function loadLists() {
     try {
       const lists = await getLists();
-      setLists(lists); // keep raw filenames
-      setListCount(lists.length);
+      const safe = lists || [];
+      setLists(safe); // keep raw filenames
+      setListCount(safe.length);
     } catch (e) {
       // ignore
     }
